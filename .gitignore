@@ -8,3 +8,6 @@ build
 .kotlin
 
 .direnv
+
+# Ignore Rust build output for the WASM crate
+wasm/target/

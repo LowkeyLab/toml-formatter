@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package taplo_wasm;
+
+message FormatTomlResult {
+  oneof result {
+    FormatTomlSuccess success = 1;
+    FormatTomlFailure failure = 2;
+  }
+}
+
+message FormatTomlSuccess {
+  string formatted = 1;
+}
+
+message FormatTomlFailure {
+  string message = 1;
+}
