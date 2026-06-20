@@ -27,15 +27,19 @@ internal fun instantiateFormatter(wasmBytes: ByteArray): WasmFormatterRuntime {
 }
 
 context(raise: Raise<TomlFormatterError>)
-private fun instantiateModule(wasmBytes: ByteArray): Instance = try {
-    Instance.builder(Parser.parse(wasmBytes)).build()
-} catch (error: Throwable) {
-    raise.raise(TomlFormatterError.ChicoryInstantiationFailure(error.describe()))
-}
+private fun instantiateModule(wasmBytes: ByteArray): Instance =
+    try {
+        Instance.builder(Parser.parse(wasmBytes)).build()
+    } catch (error: Throwable) {
+        raise.raise(TomlFormatterError.ChicoryInstantiationFailure(error.describe()))
+    }
 
 context(raise: Raise<TomlFormatterError>)
-private fun exportFunction(instance: Instance, name: String): ExportFunction = try {
-    instance.export(name)
-} catch (error: Throwable) {
-    raise.raise(TomlFormatterError.WasmInvocationFailure("lookup export '$name'", error.describe()))
-}
+private fun exportFunction(instance: Instance, name: String): ExportFunction =
+    try {
+        instance.export(name)
+    } catch (error: Throwable) {
+        raise.raise(
+            TomlFormatterError.WasmInvocationFailure("lookup export '$name'", error.describe())
+        )
+    }

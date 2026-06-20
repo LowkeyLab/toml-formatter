@@ -12,15 +12,17 @@ internal fun decodeFormatterResult(bytes: ByteArray): String {
 
     return when (result.resultCase) {
         ResultCase.SUCCESS -> result.success.formatted
-        ResultCase.FAILURE -> raise.raise(TomlFormatterError.FormatterCoreFailure(result.failure.message))
+        ResultCase.FAILURE ->
+            raise.raise(TomlFormatterError.FormatterCoreFailure(result.failure.message))
         ResultCase.RESULT_NOT_SET -> raise.raise(TomlFormatterError.MissingProtobufResult)
         null -> raise.raise(TomlFormatterError.MissingProtobufResult)
     }
 }
 
 context(raise: Raise<TomlFormatterError>)
-private fun decodeProtobuf(bytes: ByteArray): FormatTomlResult = try {
-    FormatTomlResult.parseFrom(bytes)
-} catch (error: InvalidProtocolBufferException) {
-    raise.raise(TomlFormatterError.ProtobufDecodeFailure(error.describe()))
-}
+private fun decodeProtobuf(bytes: ByteArray): FormatTomlResult =
+    try {
+        FormatTomlResult.parseFrom(bytes)
+    } catch (error: InvalidProtocolBufferException) {
+        raise.raise(TomlFormatterError.ProtobufDecodeFailure(error.describe()))
+    }
