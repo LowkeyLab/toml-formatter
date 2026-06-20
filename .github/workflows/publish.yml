@@ -1,0 +1,107 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_maven_central:
+        description: Publish and release artifacts to Maven Central
+        required: true
+        type: boolean
+        default: true
+      publish_gradle_plugin_portal:
+        description: Publish the Gradle plugin to the Gradle Plugin Portal
+        required: true
+        type: boolean
+        default: false
+      validate_plugin_portal_only:
+        description: Validate the Gradle Plugin Portal publication without publishing
+        required: true
+        type: boolean
+        default: true
+      version_date:
+        description: Optional release date in YYYY-MM-DD format; defaults to the workflow run date in UTC
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Resolve release version inputs
+        run: |
+          if [[ -n "${{ inputs.version_date }}" ]]; then
+            version_date="${{ inputs.version_date }}"
+          else
+            version_date="$(date -u +%F)"
+          fi
+
+          if [[ ! "$version_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [[ "$(date -u -d "$version_date" +%F 2>/dev/null)" != "$version_date" ]]; then
+            echo "version_date must use YYYY-MM-DD format, got: $version_date" >&2
+            exit 1
+          fi
+
+          if [[ "${{ inputs.publish_maven_central }}" != "true" && "${{ inputs.publish_gradle_plugin_portal }}" != "true" ]]; then
+            echo "At least one publish target must be selected." >&2
+            exit 1
+          fi
+
+          echo "VERSION_DATE=$version_date" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Publish and release to Maven Central
+        if: ${{ inputs.publish_maven_central }}
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+        run: >-
+          nix develop --command ./gradlew
+          publishAndReleaseToMavenCentral
+          --no-configuration-cache
+          --no-daemon
+          -PversionDate="${VERSION_DATE}"
+          -PbuildNumber="${BUILD_NUMBER}"
+
+      - name: Validate Gradle Plugin Portal publication
+        if: ${{ inputs.publish_gradle_plugin_portal && inputs.validate_plugin_portal_only }}
+        env:
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+        run: >-
+          nix develop --command ./gradlew
+          :gradle-plugin:publishPlugins
+          --validate-only
+          --no-daemon
+          -PversionDate="${VERSION_DATE}"
+          -PbuildNumber="${BUILD_NUMBER}"
+
+      - name: Publish to Gradle Plugin Portal
+        if: ${{ inputs.publish_gradle_plugin_portal && ! inputs.validate_plugin_portal_only }}
+        env:
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+        run: >-
+          nix develop --command ./gradlew
+          :gradle-plugin:publishPlugins
+          --no-daemon
+          -PversionDate="${VERSION_DATE}"
+          -PbuildNumber="${BUILD_NUMBER}"

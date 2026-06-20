@@ -16,7 +16,7 @@ The date defaults to the current local date and can be fixed with `-PversionDate
 
 The build uses the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) to publish `:lib` and `:gradle-plugin` to Maven Central. The Gradle plugin project also applies `com.gradle.plugin-publish` so the plugin can be released to the Gradle Plugin Portal.
 
-Publish coordinates use group `com.github.lowkeylab.toml-formatter` and the repository version described above. Before releasing, provide Maven Central and signing credentials through Gradle properties or environment variables:
+Publish coordinates use group `com.github.lowkeylab.toml-formatter` and the repository version described above. The GitHub Actions publish workflow passes `-PbuildNumber` from the workflow run number. Before releasing, provide Maven Central and signing credentials through Gradle properties or environment variables:
 
 ```shell
 export ORG_GRADLE_PROJECT_mavenCentralUsername=...
@@ -40,6 +40,23 @@ export GRADLE_PUBLISH_SECRET=...
 ./gradlew :gradle-plugin:publishPlugins --validate-only
 ./gradlew :gradle-plugin:publishPlugins
 ```
+
+## GitHub Actions
+
+CI runs on pull requests and pushes to `main`. The workflow uses the Nix development shell from `flake.nix`, then runs Gradle checks and publication metadata checks.
+
+Manual publishing is available from the `Publish` workflow. It can publish Maven Central artifacts, validate or publish the Gradle Plugin Portal release, or do both in one run. Maven Central publishing uses `publishAndReleaseToMavenCentral`, so a successful workflow releases the artifacts automatically.
+
+The workflow uses the repository version format `day.month.year+buildNumber`; `buildNumber` is the GitHub Actions run number. The optional `version_date` input accepts `YYYY-MM-DD`; if it is omitted, the workflow uses the current UTC date.
+
+Configure these repository secrets before publishing:
+
+- `MAVEN_CENTRAL_USERNAME`
+- `MAVEN_CENTRAL_PASSWORD`
+- `SIGNING_IN_MEMORY_KEY`
+- `SIGNING_IN_MEMORY_KEY_PASSWORD`
+- `GRADLE_PUBLISH_KEY`
+- `GRADLE_PUBLISH_SECRET`
 
 ## Gradle plugin
 
