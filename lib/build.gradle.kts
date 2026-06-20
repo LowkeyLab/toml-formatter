@@ -19,7 +19,7 @@ plugins {
 }
 
 val tomlFormatterArtifactKind =
-    Attribute.of("com.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
+    Attribute.of("io.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
 
 val wasmBinary by configurations.creating {
     isCanBeResolved = true
