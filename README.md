@@ -2,6 +2,16 @@
 
 Kotlin/JVM TOML formatter with a Gradle plugin backed by the project formatter library.
 
+## Repository versioning
+
+The root build applies the `base.versioning` convention plugin from `build-logic`. It assigns every project a version in `day.month.year+buildNumber` format, for example `20.6.2026+42`.
+
+The date defaults to the current local date and can be fixed with `-PversionDate=YYYY-MM-DD`. The build number comes from `-PbuildNumber`, then `BUILD_NUMBER`, and defaults to `0` for local builds.
+
+```shell
+./gradlew properties -PversionDate=2026-06-20 -PbuildNumber=42
+```
+
 ## Gradle plugin
 
 Apply the plugin to a Gradle project:
