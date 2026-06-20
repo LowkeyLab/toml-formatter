@@ -5,5 +5,5 @@ plugins {
 }
 
 allprojects {
-    group = "com.github.lowkeylab.toml-formatter"
+    group = "io.github.lowkeylab"
 }

@@ -4,7 +4,7 @@ plugins {
     base
 }
 
-val tomlFormatterArtifactKind = Attribute.of("com.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
+val tomlFormatterArtifactKind = Attribute.of("io.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
 
 val wasmArtifact = layout.projectDirectory.file(
     "target/wasm32-unknown-unknown/release/taplo_wasm.wasm",

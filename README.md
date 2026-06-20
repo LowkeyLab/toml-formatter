@@ -16,7 +16,7 @@ The date defaults to the current local date and can be fixed with `-PversionDate
 
 The build uses the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) to publish `:lib` and `:gradle-plugin` to Maven Central. The Gradle plugin project also applies `com.gradle.plugin-publish` so the plugin can be released to the Gradle Plugin Portal.
 
-Publish coordinates use group `com.github.lowkeylab.toml-formatter` and the repository version described above. The GitHub Actions publish workflow passes `-PbuildNumber` from the workflow run number. Before releasing, provide Maven Central and signing credentials through Gradle properties or environment variables:
+Publish coordinates use group `io.github.lowkeylab` and the repository version described above. The GitHub Actions publish workflow passes `-PbuildNumber` from the workflow run number. Before releasing, provide Maven Central and signing credentials through Gradle properties or environment variables:
 
 ```shell
 export ORG_GRADLE_PROJECT_mavenCentralUsername=...
@@ -64,7 +64,7 @@ Apply the plugin to a Gradle project:
 
 ```kotlin
 plugins {
-    id("com.github.lowkeylab.toml-formatter")
+    id("io.github.lowkeylab.toml-formatter")
 }
 ```
 

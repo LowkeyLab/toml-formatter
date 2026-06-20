@@ -28,12 +28,12 @@ gradlePlugin {
 
     plugins {
         create("tomlFormatter") {
-            id = "com.github.lowkeylab.toml-formatter"
+            id = "io.github.lowkeylab.toml-formatter"
             displayName = "TOML Formatter"
             description =
                 "Formats TOML files in Gradle builds using a Kotlin/JVM wrapper around taplo."
             tags = listOf("toml", "formatter", "formatting")
-            implementationClass = "com.github.lowkeylab.tomlformatter.gradle.TomlFormatterPlugin"
+            implementationClass = "io.github.lowkeylab.tomlformatter.gradle.TomlFormatterPlugin"
         }
     }
 }
