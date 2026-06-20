@@ -1,4 +1,5 @@
 import com.vanniktech.maven.publish.GradlePublishPlugin
+import org.gradle.plugin.compatibility.compatibility
 
 plugins {
     `java-gradle-plugin`
@@ -30,26 +31,48 @@ gradlePlugin {
         create("tomlFormatter") {
             id = "io.github.lowkeylab.toml-formatter"
             displayName = "TOML Formatter"
-            description = "Gradle TOML formatter that uses Taplo."
+            description =
+                "Formats TOML files in Gradle builds using a Kotlin/JVM wrapper around taplo."
             tags = listOf("toml", "formatter", "formatting")
             implementationClass = "io.github.lowkeylab.tomlformatter.gradle.TomlFormatterPlugin"
+            compatibility { features { configurationCache.set(true) } }
         }
     }
 }
 
+val isPublishingToMavenCentral =
+    gradle.startParameter.taskNames.any { it.contains("MavenCentral", ignoreCase = true) }
+
+tasks
+    .matching {
+        it.name in
+            setOf(
+                "publishAllPublicationsToMavenCentralRepository",
+                "publishAndReleaseToMavenCentral",
+                "publishToMavenCentral",
+            )
+    }
+    .configureEach { mustRunAfter(":lib:$name") }
+
 mavenPublishing {
     coordinates(group.toString(), "toml-formatter-gradle-plugin", version.toString())
     configure(GradlePublishPlugin())
+    publishToMavenCentral()
+    if (isPublishingToMavenCentral) {
+        signAllPublications()
+    }
 
     pom {
         name.set("TOML Formatter Gradle Plugin")
-        description.set("Gradle TOML formatter that uses Taplo.")
+        description.set(
+            "Gradle plugin that formats and checks TOML files using the TOML Formatter JVM library."
+        )
         url.set("https://github.com/lowkeylab/toml-formatter")
         licenses {
             license {
-                name.set("GNU Affero General Public License, Version 3")
-                url.set("https://www.gnu.org/licenses/agpl-3.0.txt")
-                distribution.set("repo")
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
             }
         }
         developers {

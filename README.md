@@ -21,6 +21,8 @@ With no additional configuration, `formatToml` and `checkTomlFormat` scan the pr
 
 When the Gradle `base` plugin is applied, `checkTomlFormat` is wired into the `check` lifecycle task.
 
+The plugin declares compatibility with Gradle's configuration cache in its Plugin Portal metadata.
+
 ## Configuring inputs
 
 `tomlFormatter.inputs` is the single source of truth for file selection. If you configure inputs, the default project scan is replaced by the files or file collections you provide.
