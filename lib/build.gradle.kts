@@ -9,27 +9,26 @@ plugins {
     id("base.java-toolchain")
     id("feature.kotlin-jvm")
     id("feature.protobuf-kotlin")
+    id("check.ktfmt")
+    id("check.detekt")
     id("check.kotest")
 }
 
-val tomlFormatterArtifactKind = Attribute.of("com.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
+val tomlFormatterArtifactKind =
+    Attribute.of("com.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
 
 val wasmBinary by configurations.creating {
     isCanBeResolved = true
     isCanBeConsumed = false
 
-    attributes {
-        attribute(tomlFormatterArtifactKind, "wasm-binary")
-    }
+    attributes { attribute(tomlFormatterArtifactKind, "wasm-binary") }
 }
 
 val wasmProtoSources by configurations.creating {
     isCanBeResolved = true
     isCanBeConsumed = false
 
-    attributes {
-        attribute(tomlFormatterArtifactKind, "proto-sources")
-    }
+    attributes { attribute(tomlFormatterArtifactKind, "proto-sources") }
 }
 
 dependencies {
@@ -54,9 +53,7 @@ extensions.configure<JavaPluginExtension>("java") {
     }
 }
 
-tasks.named("generateProto") {
-    dependsOn(wasmProtoSources)
-}
+tasks.named("generateProto") { dependsOn(wasmProtoSources) }
 
 tasks.named<ProcessResources>("processResources") {
     from(wasmBinary) {

@@ -28,9 +28,7 @@ context(raise: Raise<TomlFormatterError>)
 private fun WasmBuffer.useResultBuffer(
     runtime: WasmFormatterRuntime,
     block: (ByteArray) -> String,
-): String = runtime.withDeallocated(this) {
-    block(runtime.readBuffer(this))
-}
+): String = runtime.withDeallocated(this) { block(runtime.readBuffer(this)) }
 
 context(raise: Raise<TomlFormatterError>)
 internal fun unpackResultBuffer(packed: Long, memory: Memory): WasmBuffer {
@@ -44,7 +42,12 @@ internal fun unpackResultBuffer(packed: Long, memory: Memory): WasmBuffer {
 context(raise: Raise<TomlFormatterError>)
 private fun unpackU32(value: Long, packed: Long, field: String): Int {
     if (value > Int.MAX_VALUE) {
-        raise.raise(TomlFormatterError.InvalidPackedResult(packed, "$field does not fit Chicory int address/length: $value"))
+        raise.raise(
+            TomlFormatterError.InvalidPackedResult(
+                packed,
+                "$field does not fit Chicory int address/length: $value",
+            )
+        )
     }
     return value.toInt()
 }
@@ -54,7 +57,12 @@ private fun ensurePackedRange(packed: Long, memory: Memory, buffer: WasmBuffer) 
     val end = buffer.pointer.toLong() + buffer.length.toLong()
     val memorySize = memory.pages().toLong() * Memory.PAGE_SIZE.toLong()
     if (end > memorySize) {
-        raise.raise(TomlFormatterError.InvalidPackedResult(packed, "range $buffer exceeds memory size $memorySize"))
+        raise.raise(
+            TomlFormatterError.InvalidPackedResult(
+                packed,
+                "range $buffer exceeds memory size $memorySize",
+            )
+        )
     }
 }
 

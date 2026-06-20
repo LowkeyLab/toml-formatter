@@ -1,8 +1,10 @@
 [versions]
 arrow = "2.2.3"
 chicory = "1.7.5"
+detekt = "2.0.0-alpha.5"
 kotest = "6.2.1"
 kotlin = "2.4.0"
+ktfmt-gradle-plugin = "0.26.0"
 protobuf-java = "4.35.1"
 protobuf-gradle-plugin = "0.10.0"
 
@@ -11,9 +13,12 @@ arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 chicory-runtime = { module = "com.dylibso.chicory:runtime", version.ref = "chicory" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+ktfmt-gradle-plugin = { module = "com.ncorti.ktfmt.gradle:com.ncorti.ktfmt.gradle.gradle.plugin", version.ref = "ktfmt-gradle-plugin" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf-java" }
 protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf-java" }
 
 [plugins]
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt-gradle-plugin" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf-gradle-plugin" }
