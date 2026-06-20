@@ -1,4 +1,5 @@
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 val versionDate =
     providers.gradleProperty("versionDate").map(LocalDate::parse).orElse(providers.provider { LocalDate.now() })
@@ -7,7 +8,7 @@ val buildNumber =
 
 val repositoryVersion =
     versionDate.zip(buildNumber) { date, build ->
-        "${date.dayOfMonth}.${date.monthValue}.${date.year}+$build"
+        "${date.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))}+$build"
     }
 
 allprojects {

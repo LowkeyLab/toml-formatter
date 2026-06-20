@@ -4,7 +4,7 @@ Kotlin/JVM TOML formatter with a Gradle plugin backed by the project formatter l
 
 ## Repository versioning
 
-The root build applies the `base.versioning` convention plugin from `build-logic`. It assigns every project a version in `day.month.year+buildNumber` format, for example `20.6.2026+42`.
+The root build applies the `base.versioning` convention plugin from `build-logic`. It assigns every project a version in `yyyy.mm.dd+buildNumber` format, for example `2026.06.20+42`.
 
 The date defaults to the current local date and can be fixed with `-PversionDate=YYYY-MM-DD`. The build number comes from `-PbuildNumber`, then `BUILD_NUMBER`, and defaults to `0` for local builds.
 
@@ -47,7 +47,7 @@ CI runs on pull requests and pushes to `main`. The workflow uses the Nix develop
 
 Manual publishing is available from the `Publish` workflow. It can publish the JVM library to Maven Central, validate or publish the Gradle Plugin Portal release, or do both in one run. Maven Central publishing uses `publishAndReleaseToMavenCentral`, so a successful workflow releases the library artifact automatically.
 
-The workflow uses the repository version format `day.month.year+buildNumber`; `buildNumber` is the GitHub Actions run number. The optional `version_date` input accepts `YYYY-MM-DD`; if it is omitted, the workflow uses the current UTC date.
+The workflow uses the repository version format `yyyy.mm.dd+buildNumber`; `buildNumber` is the GitHub Actions run number. The optional `version_date` input accepts `YYYY-MM-DD`; if it is omitted, the workflow uses the current UTC date.
 
 Configure these repository secrets before publishing:
 
