@@ -4,7 +4,6 @@ import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 
 public open class TomlFormatterExtension
@@ -12,12 +11,6 @@ public open class TomlFormatterExtension
 constructor(objects: ObjectFactory, project: Project) {
     public val inputs: TomlFormatterInputs =
         objects.newInstance(TomlFormatterInputs::class.java, project)
-
-    public val includes: ListProperty<String> =
-        objects.listProperty(String::class.java).convention(listOf("**/*.toml"))
-
-    public val excludes: ListProperty<String> =
-        objects.listProperty(String::class.java).convention(listOf("**/build/**", "**/.gradle/**"))
 }
 
 public open class TomlFormatterInputs @Inject constructor(private val project: Project) {

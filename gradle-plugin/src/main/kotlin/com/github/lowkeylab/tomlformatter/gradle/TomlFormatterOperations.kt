@@ -18,16 +18,10 @@ internal fun formatTomlFileContents(source: String, file: File, projectDir: File
             ifRight = { formatted -> formatted },
         )
 
-internal fun resolveTomlFiles(
-    projectDir: File,
-    sources: FileCollection,
-    includes: List<String>,
-    excludes: List<String>,
-): List<File> =
+internal fun resolveSourceFiles(projectDir: File, sources: FileCollection): List<File> =
     sources.files
         .asSequence()
         .flatMap { source -> source.candidateFiles() }
-        .filter { file -> file.isIncluded(projectDir, includes, excludes) }
         .distinctBy { file -> file.canonicalFile }
         .sortedBy { file -> file.displayPath(projectDir) }
         .toList()
@@ -41,57 +35,6 @@ private fun File.candidateFiles(): Sequence<File> =
         isDirectory -> walkTopDown().filter { candidate -> candidate.isFile }
         else -> emptySequence()
     }
-
-private fun File.isIncluded(
-    projectDir: File,
-    includes: List<String>,
-    excludes: List<String>,
-): Boolean {
-    val path = displayPath(projectDir)
-    val included = includes.isEmpty() || includes.any { pattern -> pattern.matchesGlob(path) }
-    val excluded = excludes.any { pattern -> pattern.matchesGlob(path) }
-    return included && !excluded
-}
-
-private const val DOUBLE_STAR_SLASH_LENGTH = 3
-
-private fun String.matchesGlob(path: String): Boolean = globToRegex().matches(path)
-
-private fun String.globToRegex(): Regex {
-    val pattern = replace('\\', '/')
-    val regex = StringBuilder("^")
-    var index = 0
-
-    while (index < pattern.length) {
-        val char = pattern[index]
-        when {
-            char == '*' &&
-                pattern.getOrNull(index + 1) == '*' &&
-                pattern.getOrNull(index + 2) == '/' -> {
-                regex.append("(?:.*/)?")
-                index += DOUBLE_STAR_SLASH_LENGTH
-            }
-            char == '*' && pattern.getOrNull(index + 1) == '*' -> {
-                regex.append(".*")
-                index += 2
-            }
-            char == '*' -> {
-                regex.append("[^/]*")
-                index += 1
-            }
-            char == '?' -> {
-                regex.append("[^/]")
-                index += 1
-            }
-            else -> {
-                regex.append(Regex.escape(char.toString()))
-                index += 1
-            }
-        }
-    }
-
-    return Regex(regex.append('$').toString())
-}
 
 private fun TomlFormatterError.toDisplayMessage(): String =
     when (this) {
