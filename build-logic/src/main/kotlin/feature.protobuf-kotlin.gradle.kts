@@ -1,7 +1,5 @@
 import com.google.protobuf.gradle.id
-import com.google.protobuf.gradle.proto
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.plugins.JavaPluginExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -14,17 +12,6 @@ val protobufVersion = libs.findVersion("protobuf-java").get().requiredVersion
 
 dependencies {
     add("implementation", libs.findLibrary("protobuf-kotlin").get())
-}
-
-pluginManager.withPlugin("java") {
-    extensions.configure<JavaPluginExtension>("java") {
-        sourceSets.named("main") {
-            proto {
-                srcDir(rootProject.layout.projectDirectory.dir("wasm/proto"))
-                include("format_toml.proto")
-            }
-        }
-    }
 }
 
 protobuf {

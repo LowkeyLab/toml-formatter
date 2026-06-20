@@ -1,3 +1,8 @@
+import com.google.protobuf.gradle.proto
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.language.jvm.tasks.ProcessResources
+
 plugins {
     `java-library`
     id("base.repositories")
@@ -5,6 +10,26 @@ plugins {
     id("feature.kotlin-jvm")
     id("feature.protobuf-kotlin")
     id("check.kotest")
+}
+
+val tomlFormatterArtifactKind = Attribute.of("com.github.lowkeylab.tomlformatter.artifact-kind", String::class.java)
+
+val wasmBinary by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+
+    attributes {
+        attribute(tomlFormatterArtifactKind, "wasm-binary")
+    }
+}
+
+val wasmProtoSources by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+
+    attributes {
+        attribute(tomlFormatterArtifactKind, "proto-sources")
+    }
 }
 
 dependencies {
@@ -15,31 +40,26 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.runner.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    wasmBinary(project(path = ":wasm", configuration = "wasmBinaryElements"))
+    wasmProtoSources(project(path = ":wasm", configuration = "protoSourceElements"))
 }
 
-val wasmArtifact = rootProject.layout.projectDirectory.file(
-    "wasm/target/wasm32-unknown-unknown/release/taplo_wasm.wasm",
-)
+extensions.configure<JavaPluginExtension>("java") {
+    sourceSets.named("main") {
+        proto {
+            srcDir(wasmProtoSources)
+            include("format_toml.proto")
+        }
+    }
+}
 
-val buildWasm by tasks.registering(Exec::class) {
-    group = "build"
-    description = "Builds the Rust formatter WASM artifact for JVM resource packaging."
-
-    workingDir = rootProject.layout.projectDirectory.dir("wasm").asFile
-    commandLine("cargo", "build", "--target", "wasm32-unknown-unknown", "--release")
-
-    inputs.files(
-        rootProject.layout.projectDirectory.file("wasm/Cargo.toml"),
-        rootProject.layout.projectDirectory.file("wasm/Cargo.lock"),
-    )
-    inputs.dir(rootProject.layout.projectDirectory.dir("wasm/src"))
-    inputs.dir(rootProject.layout.projectDirectory.dir("wasm/proto"))
-    outputs.file(wasmArtifact)
+tasks.named("generateProto") {
+    dependsOn(wasmProtoSources)
 }
 
 tasks.named<ProcessResources>("processResources") {
-    dependsOn(buildWasm)
-    from(wasmArtifact) {
+    from(wasmBinary) {
         into("wasm")
         rename { "taplo_wasm.wasm" }
     }
