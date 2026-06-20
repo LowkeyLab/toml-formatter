@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_maven_central:
-        description: Publish and release artifacts to Maven Central
+        description: Publish and release the JVM library to Maven Central
         required: true
         type: boolean
         default: true
@@ -66,7 +66,7 @@ jobs:
           echo "VERSION_DATE=$version_date" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
-      - name: Publish and release to Maven Central
+      - name: Publish and release JVM library to Maven Central
         if: ${{ inputs.publish_maven_central }}
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
