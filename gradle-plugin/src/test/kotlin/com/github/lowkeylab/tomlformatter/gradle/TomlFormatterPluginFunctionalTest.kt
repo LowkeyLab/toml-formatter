@@ -27,6 +27,28 @@ class TomlFormatterPluginFunctionalTest :
             result.output shouldContain "checkTomlFormat"
         }
 
+        test("zero configuration formats TOML files only") {
+            val projectDir = testProject()
+            projectDir.writeBuildFile(
+                """
+                plugins {
+                    id("com.github.lowkeylab.toml-formatter")
+                }
+                """
+                    .trimIndent()
+            )
+            val sample = projectDir.resolve("sample.toml")
+            val notes = projectDir.resolve("notes.txt")
+            sample.toFile().writeText("key=\"value\"")
+            notes.toFile().writeText("key=\"value\"")
+
+            val result = gradleRunner(projectDir, "formatToml").build()
+
+            result.task(":formatToml")?.outcome shouldBe TaskOutcome.SUCCESS
+            sample.toFile().readText() shouldBe "key = \"value\"\n"
+            notes.toFile().readText() shouldBe "key=\"value\""
+        }
+
         test("formatToml formats an explicitly configured file in place") {
             val projectDir = testProject()
             projectDir.writeBuildFile(
@@ -97,7 +119,7 @@ class TomlFormatterPluginFunctionalTest :
             result.task(":checkTomlFormat")?.outcome shouldBe TaskOutcome.SUCCESS
         }
 
-        test("extension configuration restricts glob inputs and excludes") {
+        test("fileTree inputs control custom includes and excludes") {
             val projectDir = testProject()
             projectDir.writeBuildFile(
                 """
@@ -106,8 +128,10 @@ class TomlFormatterPluginFunctionalTest :
                 }
 
                 tomlFormatter {
-                    inputs.from("config/**/*.toml")
-                    excludes.set(listOf("**/ignored/**"))
+                    inputs.from(fileTree("config") {
+                        include("**/*.toml")
+                        exclude("**/ignored/**")
+                    })
                 }
                 """
                     .trimIndent()
@@ -125,6 +149,65 @@ class TomlFormatterPluginFunctionalTest :
 
             target.toFile().readText() shouldBe "key = \"value\"\n"
             ignored.toFile().readText() shouldBe "key=\"value\""
+            outside.toFile().readText() shouldBe "key=\"value\""
+        }
+
+        test("zero configuration excludes generated and build directories") {
+            val projectDir = testProject()
+            projectDir.writeBuildFile(
+                """
+                plugins {
+                    id("com.github.lowkeylab.toml-formatter")
+                }
+                """
+                    .trimIndent()
+            )
+            val normal = projectDir.resolve("normal.toml")
+            val buildOutput = projectDir.resolve("build/generated.toml")
+            val gradleCache = projectDir.resolve(".gradle/cache.toml")
+            val kotlinSession = projectDir.resolve(".kotlin/session.toml")
+            val wasmTarget = projectDir.resolve("wasm/target/generated.toml")
+            listOf(buildOutput, gradleCache, kotlinSession, wasmTarget).forEach { file ->
+                file.parent.toFile().mkdirs()
+                file.toFile().writeText("key=\"value\"")
+            }
+            normal.toFile().writeText("key=\"value\"")
+
+            gradleRunner(projectDir, "formatToml").build()
+
+            normal.toFile().readText() shouldBe "key = \"value\"\n"
+            buildOutput.toFile().readText() shouldBe "key=\"value\""
+            gradleCache.toFile().readText() shouldBe "key=\"value\""
+            kotlinSession.toFile().readText() shouldBe "key=\"value\""
+            wasmTarget.toFile().readText() shouldBe "key=\"value\""
+        }
+
+        test("explicit directory inputs are expanded as configured") {
+            val projectDir = testProject()
+            projectDir.writeBuildFile(
+                """
+                plugins {
+                    id("com.github.lowkeylab.toml-formatter")
+                }
+
+                tomlFormatter {
+                    inputs.from("config")
+                }
+                """
+                    .trimIndent()
+            )
+            val sample = projectDir.resolve("config/nested/sample.toml")
+            val metadata = projectDir.resolve("config/metadata.txt")
+            val outside = projectDir.resolve("outside.toml")
+            sample.parent.toFile().mkdirs()
+            sample.toFile().writeText("key=\"value\"")
+            metadata.toFile().writeText("key=\"value\"")
+            outside.toFile().writeText("key=\"value\"")
+
+            gradleRunner(projectDir, "formatToml").build()
+
+            sample.toFile().readText() shouldBe "key = \"value\"\n"
+            metadata.toFile().readText() shouldBe "key = \"value\"\n"
             outside.toFile().readText() shouldBe "key=\"value\""
         }
 

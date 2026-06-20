@@ -2,6 +2,7 @@ package com.github.lowkeylab.tomlformatter.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.FileTree
 
 public class TomlFormatterPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -15,7 +16,7 @@ public class TomlFormatterPlugin : Plugin<Project> {
                         if (extension.inputs.hasExplicitSources.get()) {
                             extension.inputs.sources
                         } else {
-                            project.files(project.layout.projectDirectory)
+                            project.defaultTomlSources()
                         }
                     }
                 )
@@ -24,8 +25,6 @@ public class TomlFormatterPlugin : Plugin<Project> {
             task.group = "formatting"
             task.description = "Formats configured TOML files in place."
             task.sourceFiles.from(sourceFiles)
-            task.includes.set(extension.includes)
-            task.excludes.set(extension.excludes)
         }
 
         val checkTomlFormat =
@@ -33,8 +32,6 @@ public class TomlFormatterPlugin : Plugin<Project> {
                 task.group = "verification"
                 task.description = "Checks that configured TOML files are formatted."
                 task.sourceFiles.from(sourceFiles)
-                task.includes.set(extension.includes)
-                task.excludes.set(extension.excludes)
             }
 
         project.pluginManager.withPlugin("base") {
@@ -42,3 +39,20 @@ public class TomlFormatterPlugin : Plugin<Project> {
         }
     }
 }
+
+private fun Project.defaultTomlSources(): FileTree =
+    fileTree(layout.projectDirectory.asFile).apply {
+        include("**/*.toml")
+        exclude(
+            "build/**",
+            ".gradle/**",
+            ".kotlin/**",
+            ".direnv/**",
+            "**/build/**",
+            "**/.gradle/**",
+            "**/.kotlin/**",
+            "**/.direnv/**",
+            "wasm/target/**",
+            "**/target/**",
+        )
+    }

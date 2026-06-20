@@ -3,9 +3,7 @@ package com.github.lowkeylab.tomlformatter.gradle
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.IgnoreEmptyDirectories
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -19,16 +17,11 @@ public abstract class CheckTomlFormatTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     public abstract val sourceFiles: ConfigurableFileCollection
 
-    @get:Input public abstract val includes: ListProperty<String>
-
-    @get:Input public abstract val excludes: ListProperty<String>
-
     @TaskAction
     public fun check() {
         val projectDir = project.projectDir
         val unformattedFiles =
-            resolveTomlFiles(projectDir, sourceFiles, includes.get(), excludes.get()).filter { file
-                ->
+            resolveSourceFiles(projectDir, sourceFiles).filter { file ->
                 val original = file.readText()
                 val formatted = formatTomlFileContents(original, file, projectDir)
                 formatted != original
