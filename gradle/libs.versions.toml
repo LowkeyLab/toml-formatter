@@ -12,6 +12,8 @@ protobuf-gradle-plugin = "0.10.0"
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 chicory-runtime = { module = "com.dylibso.chicory:runtime", version.ref = "chicory" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+# https://kotest.io/docs/assertions/arrow.html
+kotest-assertions-arrow = { module = "io.kotest:kotest-assertions-arrow", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 ktfmt-gradle-plugin = { module = "com.ncorti.ktfmt.gradle:com.ncorti.ktfmt.gradle.gradle.plugin", version.ref = "ktfmt-gradle-plugin" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf-java" }

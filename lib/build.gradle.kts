@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.protobuf.java)
 
     testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.assertions.arrow)
     testImplementation(libs.kotest.runner.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
