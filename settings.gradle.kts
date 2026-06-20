@@ -12,4 +12,4 @@ plugins {
 
 rootProject.name = "toml-formatter"
 includeBuild("build-logic")
-include("lib")
+include("lib", "wasm")
