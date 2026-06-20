@@ -40,27 +40,8 @@ gradlePlugin {
     }
 }
 
-val isPublishingToMavenCentral =
-    gradle.startParameter.taskNames.any { it.contains("MavenCentral", ignoreCase = true) }
-
-tasks
-    .matching {
-        it.name in
-            setOf(
-                "publishAllPublicationsToMavenCentralRepository",
-                "publishAndReleaseToMavenCentral",
-                "publishToMavenCentral",
-            )
-    }
-    .configureEach { mustRunAfter(":lib:$name") }
-
 mavenPublishing {
-    coordinates(group.toString(), "toml-formatter-gradle-plugin", version.toString())
     configure(GradlePublishPlugin())
-    publishToMavenCentral()
-    if (isPublishingToMavenCentral) {
-        signAllPublications()
-    }
 
     pom {
         name.set("TOML Formatter Gradle Plugin")
