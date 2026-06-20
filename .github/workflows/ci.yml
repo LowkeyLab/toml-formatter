@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Gradle checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Run checks
+        run: nix develop --command ./gradlew check --no-daemon
+
+      - name: Check publication metadata
+        run: >-
+          nix develop --command ./gradlew
+          :lib:checkPomFileForMavenPublication
+          :gradle-plugin:checkPomFileForPluginMavenPublication
+          :gradle-plugin:checkPomFileForTomlFormatterPluginMarkerMavenPublication
+          --no-daemon
