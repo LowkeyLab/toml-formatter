@@ -1,5 +1,9 @@
+import com.vanniktech.maven.publish.GradlePublishPlugin
+
 plugins {
     `java-gradle-plugin`
+    alias(libs.plugins.gradle.plugin.publish)
+    alias(libs.plugins.vanniktech.maven.publish)
     id("base.repositories")
     id("base.java-toolchain")
     id("feature.kotlin-jvm")
@@ -19,10 +23,70 @@ dependencies {
 }
 
 gradlePlugin {
+    website = "https://github.com/lowkeylab/toml-formatter"
+    vcsUrl = "https://github.com/lowkeylab/toml-formatter.git"
+
     plugins {
         create("tomlFormatter") {
             id = "com.github.lowkeylab.toml-formatter"
+            displayName = "TOML Formatter"
+            description =
+                "Formats TOML files in Gradle builds using a Kotlin/JVM wrapper around taplo."
+            tags = listOf("toml", "formatter", "formatting")
             implementationClass = "com.github.lowkeylab.tomlformatter.gradle.TomlFormatterPlugin"
+        }
+    }
+}
+
+val isPublishingToMavenCentral =
+    gradle.startParameter.taskNames.any { it.contains("MavenCentral", ignoreCase = true) }
+
+tasks
+    .matching {
+        it.name in
+            setOf(
+                "publishAllPublicationsToMavenCentralRepository",
+                "publishAndReleaseToMavenCentral",
+                "publishToMavenCentral",
+            )
+    }
+    .configureEach { mustRunAfter(":lib:$name") }
+
+mavenPublishing {
+    coordinates(group.toString(), "toml-formatter-gradle-plugin", version.toString())
+    configure(GradlePublishPlugin())
+    publishToMavenCentral()
+    if (isPublishingToMavenCentral) {
+        signAllPublications()
+    }
+
+    pom {
+        name.set("TOML Formatter Gradle Plugin")
+        description.set(
+            "Gradle plugin that formats and checks TOML files using the TOML Formatter JVM library."
+        )
+        url.set("https://github.com/lowkeylab/toml-formatter")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("lowkeylab")
+                name.set("Lowkey Lab")
+                email.set("lowkeylab@users.noreply.github.com")
+                organization.set("Lowkey Lab")
+                organizationUrl.set("https://github.com/lowkeylab")
+                url.set("https://github.com/lowkeylab")
+            }
+        }
+        scm {
+            url.set("https://github.com/lowkeylab/toml-formatter")
+            connection.set("scm:git:https://github.com/lowkeylab/toml-formatter.git")
+            developerConnection.set("scm:git:ssh://git@github.com/lowkeylab/toml-formatter.git")
         }
     }
 }
