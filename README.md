@@ -12,6 +12,35 @@ The date defaults to the current local date and can be fixed with `-PversionDate
 ./gradlew properties -PversionDate=2026-06-20 -PbuildNumber=42
 ```
 
+## Publishing
+
+The build uses the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) to publish `:lib` and `:gradle-plugin` to Maven Central. The Gradle plugin project also applies `com.gradle.plugin-publish` so the plugin can be released to the Gradle Plugin Portal.
+
+Publish coordinates use group `com.github.lowkeylab.toml-formatter` and the repository version described above. Before releasing, provide Maven Central and signing credentials through Gradle properties or environment variables:
+
+```shell
+export ORG_GRADLE_PROJECT_mavenCentralUsername=...
+export ORG_GRADLE_PROJECT_mavenCentralPassword=...
+export ORG_GRADLE_PROJECT_signingInMemoryKey=...
+export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=...
+```
+
+Validate and publish Maven Central artifacts:
+
+```shell
+./gradlew publishToMavenCentral --no-configuration-cache
+./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
+```
+
+Publish the Gradle plugin to the Plugin Portal with Portal credentials:
+
+```shell
+export GRADLE_PUBLISH_KEY=...
+export GRADLE_PUBLISH_SECRET=...
+./gradlew :gradle-plugin:publishPlugins --validate-only
+./gradlew :gradle-plugin:publishPlugins
+```
+
 ## Gradle plugin
 
 Apply the plugin to a Gradle project:

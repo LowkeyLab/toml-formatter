@@ -1,4 +1,7 @@
 import com.google.protobuf.gradle.proto
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.SourcesJar
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -9,6 +12,7 @@ plugins {
     id("base.java-toolchain")
     id("feature.kotlin-jvm")
     id("feature.protobuf-kotlin")
+    alias(libs.plugins.vanniktech.maven.publish)
     id("check.ktfmt")
     id("check.detekt")
     id("check.kotest")
@@ -60,5 +64,45 @@ tasks.named<ProcessResources>("processResources") {
     from(wasmBinary) {
         into("wasm")
         rename { "taplo_wasm.wasm" }
+    }
+}
+
+val isPublishingToMavenCentral =
+    gradle.startParameter.taskNames.any { it.contains("MavenCentral", ignoreCase = true) }
+
+mavenPublishing {
+    coordinates(group.toString(), "toml-formatter", version.toString())
+    configure(KotlinJvm(javadocJar = JavadocJar.Empty(), sourcesJar = SourcesJar.Sources()))
+    publishToMavenCentral()
+    if (isPublishingToMavenCentral) {
+        signAllPublications()
+    }
+
+    pom {
+        name.set("TOML Formatter JVM")
+        description.set("Kotlin/JVM TOML formatter backed by taplo WebAssembly.")
+        url.set("https://github.com/lowkeylab/toml-formatter")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("lowkeylab")
+                name.set("Lowkey Lab")
+                email.set("lowkeylab@users.noreply.github.com")
+                organization.set("Lowkey Lab")
+                organizationUrl.set("https://github.com/lowkeylab")
+                url.set("https://github.com/lowkeylab")
+            }
+        }
+        scm {
+            url.set("https://github.com/lowkeylab/toml-formatter")
+            connection.set("scm:git:https://github.com/lowkeylab/toml-formatter.git")
+            developerConnection.set("scm:git:ssh://git@github.com/lowkeylab/toml-formatter.git")
+        }
     }
 }
