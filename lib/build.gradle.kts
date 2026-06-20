@@ -1,15 +1,10 @@
-import com.google.protobuf.gradle.proto
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.protobuf)
     `java-library`
-}
-
-repositories {
-    mavenCentral()
+    id("base.repositories")
+    id("base.java-toolchain")
+    id("feature.kotlin-jvm")
+    id("feature.protobuf-kotlin")
+    id("check.kotest")
 }
 
 dependencies {
@@ -20,41 +15,6 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.runner.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
-
-kotlin {
-    compilerOptions {
-        languageVersion.set(KotlinVersion.KOTLIN_2_4)
-        apiVersion.set(KotlinVersion.KOTLIN_2_4)
-        freeCompilerArgs.add("-Xcontext-parameters")
-    }
-}
-
-sourceSets {
-    main {
-        proto {
-            srcDir(rootProject.layout.projectDirectory.dir("wasm/proto"))
-            include("format_toml.proto")
-        }
-    }
-}
-
-val protobufVersion = libs.versions.protobuf.java.get()
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:$protobufVersion"
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    dependsOn(tasks.named("generateProto"))
 }
 
 val wasmArtifact = rootProject.layout.projectDirectory.file(
@@ -83,8 +43,4 @@ tasks.named<ProcessResources>("processResources") {
         into("wasm")
         rename { "taplo_wasm.wasm" }
     }
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
 }
