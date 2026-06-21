@@ -7,15 +7,20 @@ use taplo::formatter::{format, Options};
 use crate::result::{encode_failure, encode_success};
 
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-fn deterministic_getrandom(dest: &mut [u8]) -> Result<(), getrandom::Error> {
+#[no_mangle]
+unsafe extern "Rust" fn __getrandom_v03_custom(
+    dest: *mut u8,
+    len: usize,
+) -> Result<(), getrandom::Error> {
+    let dest = unsafe {
+        core::ptr::write_bytes(dest, 0, len);
+        core::slice::from_raw_parts_mut(dest, len)
+    };
     for (index, byte) in dest.iter_mut().enumerate() {
         *byte = (index as u8).wrapping_mul(37).wrapping_add(113);
     }
     Ok(())
 }
-
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
-getrandom::register_custom_getrandom!(deterministic_getrandom);
 
 /// Allocates `size` bytes in WASM linear memory and transfers ownership to the host.
 ///
