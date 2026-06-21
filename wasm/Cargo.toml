@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 [dependencies]
 ahash = "=0.8.4"
 getrandom = { version = "0.2", features = ["custom"] }
-prost = { version = "0.13", default-features = false, features = ["derive"] }
+prost = { version = "0.14", default-features = false, features = ["derive"] }
 taplo = { version = "0.14", default-features = false }
