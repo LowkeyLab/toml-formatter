@@ -27,7 +27,7 @@ class TomlFormatterPluginFunctionalTest :
             result.output shouldContain "checkTomlFormat"
         }
 
-        test("zero configuration formats TOML files only") {
+        test("zero configuration leaves TOML files unselected") {
             val projectDir = testProject()
             projectDir.writeBuildFile(
                 """
@@ -38,15 +38,12 @@ class TomlFormatterPluginFunctionalTest :
                     .trimIndent()
             )
             val sample = projectDir.resolve("sample.toml")
-            val notes = projectDir.resolve("notes.txt")
             sample.toFile().writeText("key=\"value\"")
-            notes.toFile().writeText("key=\"value\"")
 
             val result = gradleRunner(projectDir, "formatToml").build()
 
             result.task(":formatToml")?.outcome shouldBe TaskOutcome.SUCCESS
-            sample.toFile().readText() shouldBe "key = \"value\"\n"
-            notes.toFile().readText() shouldBe "key=\"value\""
+            sample.toFile().readText() shouldBe "key=\"value\""
         }
 
         test("formatToml formats an explicitly configured file in place") {
@@ -152,34 +149,28 @@ class TomlFormatterPluginFunctionalTest :
             outside.toFile().readText() shouldBe "key=\"value\""
         }
 
-        test("zero configuration excludes generated and build directories") {
+        test("wildcard strings are delegated to Gradle file collection semantics") {
             val projectDir = testProject()
             projectDir.writeBuildFile(
                 """
                 plugins {
                     id("io.github.lowkeylab.toml-formatter")
                 }
+
+                tomlFormatter {
+                    inputs.from("config/**/*.toml")
+                }
                 """
                     .trimIndent()
             )
-            val normal = projectDir.resolve("normal.toml")
-            val buildOutput = projectDir.resolve("build/generated.toml")
-            val gradleCache = projectDir.resolve(".gradle/cache.toml")
-            val kotlinSession = projectDir.resolve(".kotlin/session.toml")
-            val wasmTarget = projectDir.resolve("wasm/target/generated.toml")
-            listOf(buildOutput, gradleCache, kotlinSession, wasmTarget).forEach { file ->
-                file.parent.toFile().mkdirs()
-                file.toFile().writeText("key=\"value\"")
-            }
-            normal.toFile().writeText("key=\"value\"")
+            val target = projectDir.resolve("config/nested/target.toml")
+            target.parent.toFile().mkdirs()
+            target.toFile().writeText("key=\"value\"")
 
-            gradleRunner(projectDir, "formatToml").build()
+            val result = gradleRunner(projectDir, "formatToml").build()
 
-            normal.toFile().readText() shouldBe "key = \"value\"\n"
-            buildOutput.toFile().readText() shouldBe "key=\"value\""
-            gradleCache.toFile().readText() shouldBe "key=\"value\""
-            kotlinSession.toFile().readText() shouldBe "key=\"value\""
-            wasmTarget.toFile().readText() shouldBe "key=\"value\""
+            result.task(":formatToml")?.outcome shouldBe TaskOutcome.SUCCESS
+            target.toFile().readText() shouldBe "key=\"value\""
         }
 
         test("explicit directory inputs are expanded as configured") {
