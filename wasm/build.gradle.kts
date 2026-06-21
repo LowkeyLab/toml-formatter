@@ -21,6 +21,7 @@ val buildWasm by tasks.registering(Exec::class) {
         layout.projectDirectory.file("Cargo.toml"),
         layout.projectDirectory.file("Cargo.lock"),
     )
+    inputs.dir(layout.projectDirectory.dir(".cargo"))
     inputs.dir(layout.projectDirectory.dir("src"))
     inputs.dir(layout.projectDirectory.dir("proto"))
     outputs.file(wasmArtifact)
