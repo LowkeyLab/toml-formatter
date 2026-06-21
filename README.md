@@ -12,7 +12,7 @@ plugins {
 }
 ```
 
-With no additional configuration, `formatToml` and `checkTomlFormat` scan the project for `**/*.toml` files. The default scan skips common generated and build/tooling directories such as `build`, `.gradle`, `.kotlin`, `.direnv`, and `target` directories.
+With no additional configuration, `formatToml` and `checkTomlFormat` have no selected files. Configure `tomlFormatter.inputs` with Gradle file collection APIs to choose files.
 
 ```shell
 ./gradlew formatToml      # formats selected files in place
@@ -25,7 +25,7 @@ The plugin declares compatibility with Gradle's configuration cache in its Plugi
 
 ## Configuring inputs
 
-`tomlFormatter.inputs` is the single source of truth for file selection. If you configure inputs, the default project scan is replaced by the files or file collections you provide.
+`tomlFormatter.inputs` is the single source of truth for file selection. It is a Gradle `ConfigurableFileCollection`, so Gradle file, directory, provider, and file tree inputs are accepted directly.
 
 Format one file:
 
@@ -35,15 +35,7 @@ tomlFormatter {
 }
 ```
 
-Use the plugin's wildcard string convenience to create a Gradle file tree:
-
-```kotlin
-tomlFormatter {
-    inputs.from("config/**/*.toml")
-}
-```
-
-Use Gradle-native file collection APIs for custom filtering:
+Use Gradle-native file collection APIs for wildcard patterns and custom filtering. String inputs are passed to Gradle as paths; use `fileTree` for glob-style matching:
 
 ```kotlin
 tomlFormatter {
