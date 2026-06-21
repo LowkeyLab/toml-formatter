@@ -8,7 +8,7 @@ gradle-plugin-publish = "2.1.1"
 ktfmt-gradle-plugin = "0.26.0"
 protobuf-java = "4.35.1"
 protobuf-gradle-plugin = "0.10.0"
-vanniktech-maven-publish = "0.36.0"
+vanniktech-maven-publish = "0.37.0"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
