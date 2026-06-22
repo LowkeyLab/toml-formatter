@@ -8,6 +8,7 @@ gradle-plugin-publish = "2.1.1"
 ktfmt-gradle-plugin = "0.26.0"
 protobuf-java = "4.35.1"
 protobuf-gradle-plugin = "0.10.0"
+selfie = "3.1.1"
 vanniktech-maven-publish = "0.37.0"
 
 [libraries]
@@ -20,6 +21,7 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 ktfmt-gradle-plugin = { module = "com.ncorti.ktfmt.gradle:com.ncorti.ktfmt.gradle.gradle.plugin", version.ref = "ktfmt-gradle-plugin" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf-java" }
 protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf-java" }
+selfie-runner-kotest = { module = "com.diffplug.selfie:selfie-runner-kotest", version.ref = "selfie" }
 
 [plugins]
 detekt = { id = "dev.detekt", version.ref = "detekt" }

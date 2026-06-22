@@ -43,6 +43,7 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.assertions.arrow)
     testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.selfie.runner.kotest)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     wasmBinary(project(path = ":wasm", configuration = "wasmBinaryElements"))

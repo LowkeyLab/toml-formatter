@@ -1,0 +1,5 @@
+# top-level comment
+[database]
+ports=[8000,8001,8002]
+connection={ host="localhost", ssl=true }
+# trailing section comment

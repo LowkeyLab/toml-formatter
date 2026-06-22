@@ -1,0 +1,11 @@
+[package]
+name="formatter"
+keywords=["toml","wasm","kotlin"]
+
+[[package.targets]]
+name="jvm"
+enabled=true
+
+[[package.targets]]
+name="wasm"
+enabled=true

@@ -1,6 +1,7 @@
 package io.github.lowkeylab.tomlformatter
 
 import arrow.core.raise.either
+import com.diffplug.selfie.coroutines.expectSelfie
 import io.github.lowkeylab.tomlformatter.internal.decodeFormatterResult
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -16,6 +17,15 @@ class FormatTomlTest :
             val result = either<TomlFormatterError, String> { formatToml("key=\"value\"") }
 
             result.shouldBeRight() shouldBe "key = \"value\"\n"
+        }
+
+        formattingFixtureNames.forEach { fixtureName ->
+            test("snapshots formatted TOML fixture $fixtureName") {
+                val source = readFormattingFixture(fixtureName)
+                val result = either<TomlFormatterError, String> { formatToml(source) }
+
+                expectSelfie(result.shouldBeRight()).toMatchDisk()
+            }
         }
 
         test("raises protobuf decode errors through Arrow Raise") {
@@ -49,3 +59,14 @@ class FormatTomlTest :
             result.shouldBeLeft() shouldBe TomlFormatterError.MissingProtobufResult
         }
     })
+
+private val formattingFixtureNames = listOf("basic-spacing", "comments-inline", "nested-arrays")
+
+private fun readFormattingFixture(name: String): String {
+    val resource =
+        checkNotNull(FormatTomlTest::class.java.classLoader.getResource("formatting/$name.toml")) {
+            "Missing formatting fixture: $name"
+        }
+
+    return resource.readText().replace("\r\n", "\n")
+}
