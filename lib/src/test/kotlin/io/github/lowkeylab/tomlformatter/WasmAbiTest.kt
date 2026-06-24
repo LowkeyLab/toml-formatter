@@ -3,8 +3,6 @@ package io.github.lowkeylab.tomlformatter
 import arrow.core.raise.either
 import io.github.lowkeylab.tomlformatter.internal.WasmBuffer
 import io.github.lowkeylab.tomlformatter.internal.WasmExport
-import io.github.lowkeylab.tomlformatter.internal.WasmFormatterRuntime
-import io.github.lowkeylab.tomlformatter.internal.WasmLinearMemory
 import io.github.lowkeylab.tomlformatter.internal.encodeSource
 import io.github.lowkeylab.tomlformatter.internal.formatTomlWithRuntime
 import io.github.lowkeylab.tomlformatter.internal.toWasmBuffer
@@ -34,7 +32,9 @@ class WasmAbiTest :
         test("rejects packed pointers that do not fit a Chicory int") {
             val packed = packed(pointer = Int.MAX_VALUE.toLong() + 1L, length = 0)
             val result =
-                either<TomlFormatterError, WasmBuffer> { unpackResultBuffer(packed, memory()) }
+                either<TomlFormatterError, WasmBuffer> {
+                    context(testMemory()) { unpackResultBuffer(packed, wasmLinearMemory()) }
+                }
 
             result.shouldBeLeft() shouldBe
                 TomlFormatterError.InvalidPackedResult(
@@ -46,7 +46,9 @@ class WasmAbiTest :
         test("rejects packed lengths that do not fit a Chicory int") {
             val packed = packed(pointer = 0, length = Int.MAX_VALUE.toLong() + 1L)
             val result =
-                either<TomlFormatterError, WasmBuffer> { unpackResultBuffer(packed, memory()) }
+                either<TomlFormatterError, WasmBuffer> {
+                    context(testMemory()) { unpackResultBuffer(packed, wasmLinearMemory()) }
+                }
 
             result.shouldBeLeft() shouldBe
                 TomlFormatterError.InvalidPackedResult(
@@ -59,7 +61,9 @@ class WasmAbiTest :
             val packed = packed(pointer = 8, length = 4)
             val result =
                 either<TomlFormatterError, WasmBuffer> {
-                    unpackResultBuffer(packed, memory(byteSize = 10))
+                    context(testMemory(byteSize = 10)) {
+                        unpackResultBuffer(packed, wasmLinearMemory())
+                    }
                 }
 
             result.shouldBeLeft() shouldBe
@@ -76,17 +80,20 @@ class WasmAbiTest :
                     .setSuccess(FormatTomlSuccess.newBuilder().setFormatted(formatted))
                     .build()
                     .toByteArray()
-            val fakeMemory = memory(reads = mapOf(20 to resultBytes))
+            val fakeMemory = testMemory(reads = mapOf(20 to resultBytes))
             val runtime =
-                abiRuntime(
-                    memory = fakeMemory,
-                    alloc = WasmExport { longArrayOf(10) },
-                    dealloc = WasmExport { longArrayOf() },
-                    formatToml =
-                        WasmExport {
-                            longArrayOf(packed(pointer = 20, length = resultBytes.size.toLong()))
-                        },
-                )
+                context(fakeMemory) {
+                    wasmRuntime(
+                        alloc = WasmExport { longArrayOf(10) },
+                        dealloc = WasmExport { longArrayOf() },
+                        formatToml =
+                            WasmExport {
+                                longArrayOf(
+                                    packed(pointer = 20, length = resultBytes.size.toLong())
+                                )
+                            },
+                    )
+                }
 
             val result =
                 either<TomlFormatterError, String> {
@@ -100,25 +107,3 @@ class WasmAbiTest :
 
 private fun packed(pointer: Long, length: Long): Long =
     (pointer shl 32) or (length and 0xFFFF_FFFFL)
-
-private fun abiRuntime(
-    memory: AbiTestMemory = memory(),
-    alloc: WasmExport = WasmExport { longArrayOf(0) },
-    dealloc: WasmExport = WasmExport { longArrayOf() },
-    formatToml: WasmExport = WasmExport { longArrayOf(0) },
-): WasmFormatterRuntime = WasmFormatterRuntime(memory, alloc, dealloc, formatToml)
-
-private fun memory(byteSize: Long = 64, reads: Map<Int, ByteArray> = emptyMap()): AbiTestMemory =
-    AbiTestMemory(byteSize = byteSize, reads = reads)
-
-private class AbiTestMemory(override val byteSize: Long, private val reads: Map<Int, ByteArray>) :
-    WasmLinearMemory {
-    val writes = mutableMapOf<Int, List<Byte>>()
-
-    override fun write(pointer: Int, bytes: ByteArray) {
-        writes[pointer] = bytes.toList()
-    }
-
-    override fun readBytes(pointer: Int, length: Int): ByteArray =
-        checkNotNull(reads[pointer]) { "missing read at $pointer" }.also { it.size shouldBe length }
-}

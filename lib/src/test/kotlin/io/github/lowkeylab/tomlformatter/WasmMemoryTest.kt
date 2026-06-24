@@ -3,8 +3,6 @@ package io.github.lowkeylab.tomlformatter
 import arrow.core.raise.either
 import io.github.lowkeylab.tomlformatter.internal.WasmBuffer
 import io.github.lowkeylab.tomlformatter.internal.WasmExport
-import io.github.lowkeylab.tomlformatter.internal.WasmFormatterRuntime
-import io.github.lowkeylab.tomlformatter.internal.WasmLinearMemory
 import io.github.lowkeylab.tomlformatter.internal.allocate
 import io.github.lowkeylab.tomlformatter.internal.ensureRange
 import io.github.lowkeylab.tomlformatter.internal.invokeSingle
@@ -29,14 +27,18 @@ class WasmMemoryTest :
         }
 
         test("allocates a buffer through the alloc export") {
-            val runtime = runtime(alloc = WasmExport { longArrayOf(12) })
+            val runtime =
+                context(testMemory()) { wasmRuntime(alloc = WasmExport { longArrayOf(12) }) }
             val result = either<TomlFormatterError, WasmBuffer> { runtime.allocate(5) }
 
             result.shouldBeRight() shouldBe WasmBuffer(pointer = 12, length = 5)
         }
 
         test("rejects alloc pointers that do not fit a Chicory int") {
-            val runtime = runtime(alloc = WasmExport { longArrayOf(Int.MAX_VALUE.toLong() + 1L) })
+            val runtime =
+                context(testMemory()) {
+                    wasmRuntime(alloc = WasmExport { longArrayOf(Int.MAX_VALUE.toLong() + 1L) })
+                }
             val result = either<TomlFormatterError, WasmBuffer> { runtime.allocate(5) }
 
             result.shouldBeLeft() shouldBe
@@ -62,7 +64,13 @@ class WasmMemoryTest :
         test("rejects negative memory ranges") {
             val result =
                 either<TomlFormatterError, WasmBuffer> {
-                    ensureRange(memory(), WasmBuffer(pointer = -1, length = 1), "read")
+                    context(testMemory()) {
+                        ensureRange(
+                            wasmLinearMemory(),
+                            WasmBuffer(pointer = -1, length = 1),
+                            "read",
+                        )
+                    }
                 }
 
             result.shouldBeLeft() shouldBe
@@ -75,7 +83,13 @@ class WasmMemoryTest :
         test("rejects memory ranges beyond byte size") {
             val result =
                 either<TomlFormatterError, WasmBuffer> {
-                    ensureRange(memory(byteSize = 4), WasmBuffer(pointer = 3, length = 2), "write")
+                    context(testMemory(byteSize = 4)) {
+                        ensureRange(
+                            wasmLinearMemory(),
+                            WasmBuffer(pointer = 3, length = 2),
+                            "write",
+                        )
+                    }
                 }
 
             result.shouldBeLeft() shouldBe
@@ -86,8 +100,8 @@ class WasmMemoryTest :
         }
 
         test("writes and reads through adapter-backed memory") {
-            val testMemory = memory(reads = mapOf(4 to byteArrayOf(9, 8)))
-            val runtime = runtime(memory = testMemory)
+            val testMemory = testMemory(reads = mapOf(4 to byteArrayOf(9, 8)))
+            val runtime = context(testMemory) { wasmRuntime() }
 
             val writeResult =
                 either<TomlFormatterError, Unit> {
@@ -104,14 +118,16 @@ class WasmMemoryTest :
         }
 
         test("maps unknown operation to invocation failure") {
-            val result = either<TomlFormatterError, Long> { runtime().invokeSingle("missing") }
+            val runtime = context(testMemory()) { wasmRuntime() }
+            val result = either<TomlFormatterError, Long> { runtime.invokeSingle("missing") }
 
             result.shouldBeLeft() shouldBe
                 TomlFormatterError.WasmInvocationFailure("missing", "unknown exported function")
         }
 
         test("maps export exceptions to invocation failure") {
-            val runtime = runtime(formatToml = WasmExport { error("boom") })
+            val runtime =
+                context(testMemory()) { wasmRuntime(formatToml = WasmExport { error("boom") }) }
             val result = either<TomlFormatterError, Long> { runtime.invokeSingle("format_toml") }
 
             result.shouldBeLeft() shouldBe
@@ -127,7 +143,8 @@ class WasmMemoryTest :
         }
 
         test("raises cleanup failures when the protected block succeeds") {
-            val runtime = runtime(dealloc = WasmExport { error("cannot free") })
+            val runtime =
+                context(testMemory()) { wasmRuntime(dealloc = WasmExport { error("cannot free") }) }
             val result =
                 either<TomlFormatterError, String> {
                     runtime.withDeallocated(WasmBuffer(pointer = 1, length = 2)) { "ok" }
@@ -137,27 +154,3 @@ class WasmMemoryTest :
                 TomlFormatterError.WasmMemoryFailure("dealloc", "cannot free")
         }
     })
-
-private fun runtime(
-    memory: MemoryTestMemory = memory(),
-    alloc: WasmExport = WasmExport { longArrayOf(0) },
-    dealloc: WasmExport = WasmExport { longArrayOf() },
-    formatToml: WasmExport = WasmExport { longArrayOf(0) },
-): WasmFormatterRuntime = WasmFormatterRuntime(memory, alloc, dealloc, formatToml)
-
-private fun memory(byteSize: Long = 64, reads: Map<Int, ByteArray> = emptyMap()): MemoryTestMemory =
-    MemoryTestMemory(byteSize = byteSize, reads = reads)
-
-private class MemoryTestMemory(
-    override val byteSize: Long,
-    private val reads: Map<Int, ByteArray>,
-) : WasmLinearMemory {
-    val writes = mutableMapOf<Int, List<Byte>>()
-
-    override fun write(pointer: Int, bytes: ByteArray) {
-        writes[pointer] = bytes.toList()
-    }
-
-    override fun readBytes(pointer: Int, length: Int): ByteArray =
-        checkNotNull(reads[pointer]) { "missing read at $pointer" }.also { it.size shouldBe length }
-}
