@@ -1,46 +1,60 @@
 package io.github.lowkeylab.tomlformatter.internal
 
 import arrow.core.raise.Raise
-import com.dylibso.chicory.runtime.Memory
 import io.github.lowkeylab.tomlformatter.TomlFormatterError
 
 context(raise: Raise<TomlFormatterError>)
-internal fun formatTomlWithWasm(source: String): String {
-    val runtime = instantiateFormatter(loadFormatterWasm())
-    val input = source.encodeToByteArray()
-    val inputBuffer = runtime.allocate(input.size)
+internal fun formatTomlWithWasm(source: String): String =
+    formatTomlWithRuntime(instantiateFormatter(loadFormatterWasm()), encodeSource(source))
 
-    return runtime.withDeallocated(inputBuffer) {
-        runtime.writeBuffer(inputBuffer, input)
+internal fun encodeSource(source: String): ByteArray = source.encodeToByteArray()
+
+context(raise: Raise<TomlFormatterError>)
+internal fun formatTomlWithRuntime(runtime: WasmFormatterRuntime, input: ByteArray): String =
+    runtime.withInputBuffer(input) { inputBuffer ->
         runtime.invokeFormatter(inputBuffer).useResultBuffer(runtime) { resultBytes ->
             decodeFormatterResult(resultBytes)
         }
     }
+
+context(raise: Raise<TomlFormatterError>)
+private fun WasmFormatterRuntime.withInputBuffer(
+    input: ByteArray,
+    block: (WasmBuffer) -> String,
+): String {
+    val inputBuffer = allocate(input.size)
+    return withDeallocated(inputBuffer) {
+        writeBuffer(inputBuffer, input)
+        block(inputBuffer)
+    }
 }
 
 context(raise: Raise<TomlFormatterError>)
-private fun WasmFormatterRuntime.invokeFormatter(input: WasmBuffer): WasmBuffer {
-    val packed = invokeSingle("format_toml", input.pointer.toLong(), input.length.toLong())
-    return unpackResultBuffer(packed, memory)
-}
+internal fun WasmFormatterRuntime.invokeFormatter(input: WasmBuffer): WasmBuffer =
+    unpackResultBuffer(
+        invokeSingle("format_toml", input.pointer.toLong(), input.length.toLong()),
+        memory,
+    )
 
 context(raise: Raise<TomlFormatterError>)
-private fun WasmBuffer.useResultBuffer(
+internal fun WasmBuffer.useResultBuffer(
     runtime: WasmFormatterRuntime,
     block: (ByteArray) -> String,
 ): String = runtime.withDeallocated(this) { block(runtime.readBuffer(this)) }
 
 context(raise: Raise<TomlFormatterError>)
-internal fun unpackResultBuffer(packed: Long, memory: Memory): WasmBuffer {
-    val pointer = unpackU32(packed ushr 32, packed, "pointer")
-    val length = unpackU32(packed and LOWER_U32_MASK, packed, "length")
-    val buffer = WasmBuffer(pointer, length)
-    ensurePackedRange(packed, memory, buffer)
-    return buffer
-}
+internal fun unpackResultBuffer(packed: Long, memory: WasmLinearMemory): WasmBuffer =
+    packed.toWasmBuffer().also { ensurePackedRange(packed, memory, it) }
 
 context(raise: Raise<TomlFormatterError>)
-private fun unpackU32(value: Long, packed: Long, field: String): Int {
+internal fun Long.toWasmBuffer(): WasmBuffer =
+    WasmBuffer(
+        unpackU32(value = this ushr 32, packed = this, field = "pointer"),
+        unpackU32(value = this and LOWER_U32_MASK, packed = this, field = "length"),
+    )
+
+context(raise: Raise<TomlFormatterError>)
+internal fun unpackU32(value: Long, packed: Long, field: String): Int {
     if (value > Int.MAX_VALUE) {
         raise.raise(
             TomlFormatterError.InvalidPackedResult(
@@ -53,17 +67,21 @@ private fun unpackU32(value: Long, packed: Long, field: String): Int {
 }
 
 context(raise: Raise<TomlFormatterError>)
-private fun ensurePackedRange(packed: Long, memory: Memory, buffer: WasmBuffer) {
+internal fun ensurePackedRange(
+    packed: Long,
+    memory: WasmLinearMemory,
+    buffer: WasmBuffer,
+): WasmBuffer {
     val end = buffer.pointer.toLong() + buffer.length.toLong()
-    val memorySize = memory.pages().toLong() * Memory.PAGE_SIZE.toLong()
-    if (end > memorySize) {
+    if (end > memory.byteSize) {
         raise.raise(
             TomlFormatterError.InvalidPackedResult(
                 packed,
-                "range $buffer exceeds memory size $memorySize",
+                "range $buffer exceeds memory size ${memory.byteSize}",
             )
         )
     }
+    return buffer
 }
 
 private const val LOWER_U32_MASK = 0xFFFF_FFFFL

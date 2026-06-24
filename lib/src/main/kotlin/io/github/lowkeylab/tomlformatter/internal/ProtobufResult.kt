@@ -7,20 +7,21 @@ import taplo_wasm.FormatToml.FormatTomlResult
 import taplo_wasm.FormatToml.FormatTomlResult.ResultCase
 
 context(raise: Raise<TomlFormatterError>)
-internal fun decodeFormatterResult(bytes: ByteArray): String {
-    val result = decodeProtobuf(bytes)
+internal fun decodeFormatterResult(bytes: ByteArray): String =
+    mapFormatterResult(decodeProtobuf(bytes))
 
-    return when (result.resultCase) {
+context(raise: Raise<TomlFormatterError>)
+internal fun mapFormatterResult(result: FormatTomlResult): String =
+    when (result.resultCase) {
         ResultCase.SUCCESS -> result.success.formatted
         ResultCase.FAILURE ->
             raise.raise(TomlFormatterError.FormatterCoreFailure(result.failure.message))
         ResultCase.RESULT_NOT_SET -> raise.raise(TomlFormatterError.MissingProtobufResult)
         null -> raise.raise(TomlFormatterError.MissingProtobufResult)
     }
-}
 
 context(raise: Raise<TomlFormatterError>)
-private fun decodeProtobuf(bytes: ByteArray): FormatTomlResult =
+internal fun decodeProtobuf(bytes: ByteArray): FormatTomlResult =
     try {
         FormatTomlResult.parseFrom(bytes)
     } catch (error: InvalidProtocolBufferException) {
