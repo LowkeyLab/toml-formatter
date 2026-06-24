@@ -1,5 +1,7 @@
 # TOML Formatter
 
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.lowkeylab.toml-formatter?label=Gradle%20Plugin%20Portal)](https://plugins.gradle.org/plugin/io.github.lowkeylab.toml-formatter)
+
 A TOML formatter for the JVM, backed by [Taplo](https://taplo.tamasfe.dev/). The repository includes a Kotlin/JVM formatter library and a Gradle plugin for formatting and checking TOML files in Gradle builds.
 
 ## Gradle plugin
