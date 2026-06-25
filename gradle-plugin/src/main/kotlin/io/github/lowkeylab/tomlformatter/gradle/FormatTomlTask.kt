@@ -25,14 +25,8 @@ public abstract class FormatTomlTask : DefaultTask() {
         val projectDir = projectDirectory.asFile.get()
         val files = resolveSourceFiles(projectDir, sourceFiles)
 
-        files.forEach { file ->
-            val original = file.readText()
-            val formatted = formatTomlFileContents(original, file, projectDir)
-
-            if (formatted != original) {
-                file.writeText(formatted)
-                logger.lifecycle("Formatted ${file.displayPath(projectDir)}")
-            }
+        context(DefaultTomlFileSystem, GradleTomlFormatLogger(logger)) {
+            formatTomlFiles(files, projectDir)
         }
     }
 }

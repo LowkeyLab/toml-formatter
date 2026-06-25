@@ -6,6 +6,60 @@ import io.github.lowkeylab.tomlformatter.formatToml
 import java.io.File
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
+import org.gradle.api.logging.Logger
+
+internal interface TomlFileSystem {
+    fun readText(file: File): String
+
+    fun writeText(file: File, text: String)
+}
+
+internal interface TomlFormatLogger {
+    fun formatted(displayPath: String)
+}
+
+internal object DefaultTomlFileSystem : TomlFileSystem {
+    override fun readText(file: File): String = file.readText()
+
+    override fun writeText(file: File, text: String): Unit = file.writeText(text)
+}
+
+internal class GradleTomlFormatLogger(private val logger: Logger) : TomlFormatLogger {
+    override fun formatted(displayPath: String): Unit = logger.lifecycle("Formatted $displayPath")
+}
+
+context(fileSystem: TomlFileSystem, formatLogger: TomlFormatLogger)
+internal fun formatTomlFiles(files: List<File>, projectDir: File): Int = files.count { file ->
+    formatTomlFileIfChanged(file, projectDir)
+}
+
+context(fileSystem: TomlFileSystem, formatLogger: TomlFormatLogger)
+internal fun formatTomlFileIfChanged(file: File, projectDir: File): Boolean {
+    val original = fileSystem.readText(file)
+    val formatted = formatTomlFileContents(original, file, projectDir)
+
+    if (formatted == original) return false
+
+    fileSystem.writeText(file, formatted)
+    formatLogger.formatted(file.displayPath(projectDir))
+    return true
+}
+
+context(fileSystem: TomlFileSystem)
+internal fun unformattedTomlFiles(files: List<File>, projectDir: File): List<File> =
+    files.filter { file ->
+        val original = fileSystem.readText(file)
+        val formatted = formatTomlFileContents(original, file, projectDir)
+        formatted != original
+    }
+
+internal fun tomlFormatFailureMessage(unformattedFiles: List<File>, projectDir: File): String =
+    buildString {
+        appendLine("TOML formatting check failed for:")
+        unformattedFiles.forEach { file -> appendLine(" - ${file.displayPath(projectDir)}") }
+        appendLine()
+        appendLine("Run `./gradlew formatToml` to fix.")
+    }
 
 internal fun formatTomlFileContents(source: String, file: File, projectDir: File): String =
     either<TomlFormatterError, String> { formatToml(source) }

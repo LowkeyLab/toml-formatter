@@ -24,24 +24,12 @@ public abstract class CheckTomlFormatTask : DefaultTask() {
     @TaskAction
     public fun check() {
         val projectDir = projectDirectory.asFile.get()
+        val files = resolveSourceFiles(projectDir, sourceFiles)
         val unformattedFiles =
-            resolveSourceFiles(projectDir, sourceFiles).filter { file ->
-                val original = file.readText()
-                val formatted = formatTomlFileContents(original, file, projectDir)
-                formatted != original
-            }
+            context(DefaultTomlFileSystem) { unformattedTomlFiles(files, projectDir) }
 
         if (unformattedFiles.isNotEmpty()) {
-            throw GradleException(
-                buildString {
-                    appendLine("TOML formatting check failed for:")
-                    unformattedFiles.forEach { file ->
-                        appendLine(" - ${file.displayPath(projectDir)}")
-                    }
-                    appendLine()
-                    appendLine("Run `./gradlew formatToml` to fix.")
-                }
-            )
+            throw GradleException(tomlFormatFailureMessage(unformattedFiles, projectDir))
         }
     }
 }
