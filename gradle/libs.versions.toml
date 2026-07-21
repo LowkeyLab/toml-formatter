@@ -9,6 +9,7 @@ ktfmt-gradle-plugin = "0.26.0"
 protobuf-java = "4.35.1"
 protobuf-gradle-plugin = "0.10.0"
 selfie = "3.1.1"
+shadow = "9.6.0"
 vanniktech-maven-publish = "0.37.0"
 
 [libraries]
@@ -29,4 +30,5 @@ gradle-plugin-publish = { id = "com.gradle.plugin-publish", version.ref = "gradl
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt-gradle-plugin" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf-gradle-plugin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
