@@ -93,14 +93,13 @@ export GRADLE_PUBLISH_SECRET=...
 
 CI runs on pull requests and pushes to `main`. The workflow uses the Nix development shell from `flake.nix`, then runs Gradle checks and publication metadata checks.
 
-Manual publishing is available from the `Publish` workflow. It can publish the JVM library to Maven Central, validate or publish the Gradle Plugin Portal release, or do both in one run. Maven Central publishing uses `publishAndReleaseToMavenCentral`, so a successful workflow releases the library artifact automatically.
+Manual Gradle Plugin Portal publishing is available from the `Publish` workflow. By default, a dispatch validates the publication without publishing it. Disable `validate_plugin_portal_only` to publish the Gradle plugin. The workflow does not publish the JVM library to Maven Central.
 
 The workflow uses the repository version format `yyyy.mm.dd+buildNumber`; `buildNumber` is the GitHub Actions run number. The optional `version_date` input accepts `YYYY-MM-DD`; if it is omitted, the workflow uses the current UTC date.
 
+After a successful Plugin Portal publication, the same workflow creates a lightweight `vyyyy.mm.dd+buildNumber` tag at the exact commit that was published and creates the corresponding GitHub release with generated release notes. The release is marked as the latest release. Validation-only runs do not create tags or releases.
+
 Configure these repository secrets before publishing:
 
-- `MAVEN_CENTRAL_USERNAME`
-- `MAVEN_CENTRAL_TOKEN`
-- `GPG_ARMORED_KEY`
 - `GRADLE_PUBLISH_KEY`
 - `GRADLE_PUBLISH_SECRET`
