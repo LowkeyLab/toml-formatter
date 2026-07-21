@@ -6,15 +6,13 @@ A TOML formatter for the JVM, backed by [Taplo](https://taplo.tamasfe.dev/). The
 
 ## Gradle plugin
 
-Apply the plugin to a Gradle project:
-
 ```kotlin
 plugins {
     id("io.github.lowkeylab.toml-formatter")
 }
 ```
 
-With no additional configuration, `formatToml` and `checkTomlFormat` have no selected files. Configure `tomlFormatter.inputs` with Gradle file collection APIs to choose files.
+The plugin contains two tasks:
 
 ```shell
 ./gradlew formatToml      # formats selected files in place
@@ -23,11 +21,9 @@ With no additional configuration, `formatToml` and `checkTomlFormat` have no sel
 
 When the Gradle `base` plugin is applied, `checkTomlFormat` is wired into the `check` lifecycle task.
 
-The plugin declares compatibility with Gradle's configuration cache in its Plugin Portal metadata.
-
 ## Configuring inputs
 
-`tomlFormatter.inputs` is the single source of truth for file selection. It is a Gradle `ConfigurableFileCollection`, so Gradle file, directory, provider, and file tree inputs are accepted directly.
+`tomlFormatter.inputs` is a `ConfigurableFileCollection`, and so can accept anything that can be passed into a FileCollection:
 
 Format one file:
 
@@ -37,7 +33,7 @@ tomlFormatter {
 }
 ```
 
-Use Gradle-native file collection APIs for wildcard patterns and custom filtering. String inputs are passed to Gradle as paths; use `fileTree` for glob-style matching:
+Or:
 
 ```kotlin
 tomlFormatter {
@@ -48,58 +44,14 @@ tomlFormatter {
 }
 ```
 
-Broad explicit inputs are honored as configured. For example, `inputs.from("config")` gives the task the files under `config`; narrow the selection with `fileTree` if only specific files should be processed.
+## Versioning
 
-## Repository versioning
-
-The root build applies the `base.versioning` convention plugin from `build-logic`. It assigns every project a version in `yyyy.mm.dd+buildNumber` format, for example `2026.06.20+42`.
-
-The date defaults to the current local date and can be fixed with `-PversionDate=YYYY-MM-DD`. The build number comes from `-PbuildNumber`, then `BUILD_NUMBER`, and defaults to `0` for local builds.
-
-```shell
-./gradlew properties -PversionDate=2026-06-20 -PbuildNumber=42
-```
+The project is versioned in `yyyy.mm.dd+buildNumber` format, for example `2026.06.20+42`.
 
 ## Publishing
 
-The build uses the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) to publish `:lib` to Maven Central. The Gradle plugin project applies `com.gradle.plugin-publish` and is published only to the Gradle Plugin Portal, not Maven Central.
-
-Publish coordinates use group `io.github.lowkeylab` and the repository version described above. The GitHub Actions publish workflow passes `-PbuildNumber` from the workflow run number. Before releasing the JVM library, provide Maven Central and signing credentials through Gradle properties or environment variables:
-
-```shell
-export ORG_GRADLE_PROJECT_mavenCentralUsername=...
-export ORG_GRADLE_PROJECT_mavenCentralPassword=...
-export ORG_GRADLE_PROJECT_signingInMemoryKey=...
-export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=...
-```
-
-Validate and publish the JVM library Maven Central artifact:
-
-```shell
-./gradlew publishToMavenCentral --no-configuration-cache
-./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
-```
-
-Publish the Gradle plugin to the Plugin Portal with Portal credentials:
-
-```shell
-export GRADLE_PUBLISH_KEY=...
-export GRADLE_PUBLISH_SECRET=...
-./gradlew :gradle-plugin:publishPlugins --validate-only
-./gradlew :gradle-plugin:publishPlugins
-```
+The build uses the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) to publish.
 
 ## GitHub Actions
 
-CI runs on pull requests and pushes to `main`. The workflow uses the Nix development shell from `flake.nix`, then runs Gradle checks and publication metadata checks.
-
-Manual Gradle Plugin Portal publishing is available from the `Publish` workflow. By default, a dispatch validates the publication without publishing it. Disable `validate_plugin_portal_only` to publish the Gradle plugin. The workflow does not publish the JVM library to Maven Central.
-
-The workflow uses the repository version format `yyyy.mm.dd+buildNumber`; `buildNumber` is the GitHub Actions run number. The optional `version_date` input accepts `YYYY-MM-DD`; if it is omitted, the workflow uses the current UTC date.
-
-After a successful Plugin Portal publication, the same workflow creates a lightweight `vyyyy.mm.dd+buildNumber` tag at the exact commit that was published and creates the corresponding GitHub release with generated release notes. The release is marked as the latest release. Validation-only runs do not create tags or releases.
-
-Configure these repository secrets before publishing:
-
-- `GRADLE_PUBLISH_KEY`
-- `GRADLE_PUBLISH_SECRET`
+CI runs on pull requests and pushes to `main`.
