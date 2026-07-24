@@ -196,7 +196,7 @@ internal fun writeSettingsFile(buildCache: Path) {
 
         buildCache {
             local {
-                directory = file(uri("$buildCache"))
+                directory = file(uri("${buildCache.toUri()}"))
             }
         }
         """
