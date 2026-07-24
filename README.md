@@ -19,7 +19,7 @@ The plugin contains two tasks:
 ./gradlew checkTomlFormat # fails if selected files are not formatted
 ```
 
-When the Gradle `base` plugin is applied, `checkTomlFormat` is wired into the `check` lifecycle task.
+When the Gradle `base` plugin is applied, `checkTomlFormat` is wired into the `check` lifecycle task. The task supports Gradle up-to-date checks and build caching.
 
 ## Configuring inputs
 

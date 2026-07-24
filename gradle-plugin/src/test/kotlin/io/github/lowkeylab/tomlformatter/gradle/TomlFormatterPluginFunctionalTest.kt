@@ -79,6 +79,32 @@ class TomlFormatterPluginFunctionalTest :
             }
         }
 
+        test("checkTomlFormat is up-to-date and relocatable through the build cache") {
+            val testRoot = Files.createTempDirectory("toml-formatter-gradle-plugin-cache-test")
+            val buildCache = testRoot.resolve("build-cache")
+            val firstProject = testProject(testRoot.resolve("first"))
+            val secondProject = testProject(testRoot.resolve("second"))
+
+            listOf(firstProject, secondProject).forEach { project ->
+                context(project) {
+                    writeSettingsFile(buildCache)
+                    writeBuildFile(tomlFormatterBuildFile("inputs.from(\"sample.toml\")"))
+                    writeProjectFile("sample.toml", "key = \"value\"\n")
+                }
+            }
+
+            val firstResult =
+                context(firstProject) { runGradle("checkTomlFormat", "--build-cache") }
+            val repeatedResult =
+                context(firstProject) { runGradle("checkTomlFormat", "--build-cache") }
+            val relocatedResult =
+                context(secondProject) { runGradle("checkTomlFormat", "--build-cache") }
+
+            firstResult.task(":checkTomlFormat")?.outcome shouldBe TaskOutcome.SUCCESS
+            repeatedResult.task(":checkTomlFormat")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+            relocatedResult.task(":checkTomlFormat")?.outcome shouldBe TaskOutcome.FROM_CACHE
+        }
+
         test("fileTree inputs control custom includes and excludes") {
             context(testProject()) {
                 writeBuildFile(
@@ -151,10 +177,31 @@ class TomlFormatterPluginFunctionalTest :
 
 internal class TestGradleProject(val dir: Path)
 
-internal fun testProject(): TestGradleProject {
-    val projectDir = Files.createTempDirectory("toml-formatter-gradle-plugin-test")
+internal fun testProject(): TestGradleProject =
+    testProject(Files.createTempDirectory("toml-formatter-gradle-plugin-test"))
+
+internal fun testProject(projectDir: Path): TestGradleProject {
+    Files.createDirectories(projectDir)
     projectDir.resolve("settings.gradle.kts").writeText("rootProject.name = \"test-project\"\n")
     return TestGradleProject(projectDir)
+}
+
+context(project: TestGradleProject)
+internal fun writeSettingsFile(buildCache: Path) {
+    project.dir
+        .resolve("settings.gradle.kts")
+        .writeText(
+            """
+        rootProject.name = "test-project"
+
+        buildCache {
+            local {
+                directory = file(uri("${buildCache.toUri()}"))
+            }
+        }
+        """
+                .trimIndent() + "\n"
+        )
 }
 
 context(project: TestGradleProject)
