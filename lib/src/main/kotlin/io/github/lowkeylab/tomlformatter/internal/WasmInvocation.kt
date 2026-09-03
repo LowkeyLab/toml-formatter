@@ -23,11 +23,12 @@ internal fun WasmExport.invokeSingle(operation: String, vararg args: Long): Long
     singleResult(operation, invokeExport(operation, *args))
 
 context(raise: Raise<TomlFormatterError>)
-private fun WasmExport.invokeExport(operation: String, vararg args: Long): LongArray =
-    runCatching { apply(*args) }
-        .getOrElse { error ->
-            raise.raise(TomlFormatterError.WasmInvocationFailure(operation, error.describe()))
-        }
+private fun WasmExport.invokeExport(operation: String, vararg args: Long): LongArray = runCatching {
+    apply(*args)
+}
+    .getOrElse { error ->
+        raise.raise(TomlFormatterError.WasmInvocationFailure(operation, error.describe()))
+    }
 
 context(raise: Raise<TomlFormatterError>)
 internal fun singleResult(operation: String, results: LongArray): Long =

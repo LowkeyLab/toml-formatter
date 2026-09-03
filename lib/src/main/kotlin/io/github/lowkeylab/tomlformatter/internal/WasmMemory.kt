@@ -35,10 +35,11 @@ internal fun <T> WasmFormatterRuntime.withDeallocated(buffer: WasmBuffer, block:
 
 internal fun WasmFormatterRuntime.deallocateFailure(
     buffer: WasmBuffer
-): TomlFormatterError.WasmMemoryFailure? =
-    runCatching { dealloc.apply(buffer.pointer.toLong(), buffer.length.toLong()) }
-        .exceptionOrNull()
-        ?.let { error -> TomlFormatterError.WasmMemoryFailure("dealloc", error.describe()) }
+): TomlFormatterError.WasmMemoryFailure? = runCatching {
+    dealloc.apply(buffer.pointer.toLong(), buffer.length.toLong())
+}
+    .exceptionOrNull()
+    ?.let { error -> TomlFormatterError.WasmMemoryFailure("dealloc", error.describe()) }
 
 private class WasmCleanupFailure(failure: TomlFormatterError.WasmMemoryFailure) :
     RuntimeException("WASM cleanup failed: $failure")
@@ -52,10 +53,12 @@ internal fun WasmFormatterRuntime.writeBuffer(buffer: WasmBuffer, bytes: ByteArr
 
 context(raise: Raise<TomlFormatterError>)
 private fun writeMemory(memory: WasmLinearMemory, pointer: Int, bytes: ByteArray): Unit =
-    runCatching { memory.write(pointer, bytes) }
-        .getOrElse { error ->
-            raise.raise(TomlFormatterError.WasmMemoryFailure("write", error.describe()))
-        }
+    runCatching {
+        memory.write(pointer, bytes)
+    }
+    .getOrElse { error ->
+        raise.raise(TomlFormatterError.WasmMemoryFailure("write", error.describe()))
+    }
 
 context(raise: Raise<TomlFormatterError>)
 internal fun WasmFormatterRuntime.readBuffer(buffer: WasmBuffer): ByteArray {
@@ -64,8 +67,9 @@ internal fun WasmFormatterRuntime.readBuffer(buffer: WasmBuffer): ByteArray {
 }
 
 context(raise: Raise<TomlFormatterError>)
-private fun readMemory(memory: WasmLinearMemory, buffer: WasmBuffer): ByteArray =
-    runCatching { memory.readBytes(buffer.pointer, buffer.length) }
-        .getOrElse { error ->
-            raise.raise(TomlFormatterError.WasmMemoryFailure("read", error.describe()))
-        }
+private fun readMemory(memory: WasmLinearMemory, buffer: WasmBuffer): ByteArray = runCatching {
+    memory.readBytes(buffer.pointer, buffer.length)
+}
+    .getOrElse { error ->
+        raise.raise(TomlFormatterError.WasmMemoryFailure("read", error.describe()))
+    }
