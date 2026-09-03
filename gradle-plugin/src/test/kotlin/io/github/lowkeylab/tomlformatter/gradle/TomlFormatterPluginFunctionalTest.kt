@@ -226,18 +226,18 @@ internal fun runGradleAndFail(vararg arguments: String): BuildResult =
 
 internal fun tomlFormatterBuildFile(configuration: String = "", extraPlugins: String = ""): String =
     buildString {
-            appendLine("plugins {")
-            if (extraPlugins.isNotBlank()) appendLine("    $extraPlugins")
-            appendLine("    id(\"io.github.lowkeylab.toml-formatter\")")
+        appendLine("plugins {")
+        if (extraPlugins.isNotBlank()) appendLine("    $extraPlugins")
+        appendLine("    id(\"io.github.lowkeylab.toml-formatter\")")
+        appendLine("}")
+        if (configuration.isNotBlank()) {
+            appendLine()
+            appendLine("tomlFormatter {")
+            configuration.lineSequence().forEach { line -> appendLine("    $line") }
             appendLine("}")
-            if (configuration.isNotBlank()) {
-                appendLine()
-                appendLine("tomlFormatter {")
-                configuration.lineSequence().forEach { line -> appendLine("    $line") }
-                appendLine("}")
-            }
         }
-        .trimEnd()
+    }
+    .trimEnd()
 
 private fun Path.writeText(content: String) {
     toFile().writeText(content)
