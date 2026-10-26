@@ -1,5 +1,5 @@
 [versions]
-arrow = "2.2.3"
+arrow = "2.3.0"
 chicory = "1.7.5"
 detekt = "2.0.0-alpha.6"
 kotest = "6.2.6"
